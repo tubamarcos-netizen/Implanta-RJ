@@ -47,6 +47,7 @@ summary .n{margin-left:auto;font-weight:400;font-size:12px;color:var(--mu)}
 .li:first-child{border:0}
 .li small{display:block;color:var(--mu)}
 .btn{all:unset;cursor:pointer;background:var(--ac);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;text-align:center}
+.btn.sec{background:transparent;color:var(--tx);border:1px solid var(--bd)}
 #gate{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
 #gate form{width:100%;max-width:380px}
 #gate img{height:44px;margin-bottom:12px}
@@ -97,7 +98,7 @@ summary .n{margin-left:auto;font-weight:400;font-size:12px;color:var(--mu)}
 </main>
 
 <script>
-const SB_URL="https://djxuqcnganzlbrijpnev.supabase.co",SB_KEY="sb_publishable_4ojnzJIB2E-U6dSd2UAlPg_9S8qzSeP";
+const SB_URL="COLE_AQUI_A_PROJECT_URL",SB_KEY="COLE_AQUI_A_ANON_KEY";
 const IC={p:"⬜",a:"🔄",w:"⏳",d:"✅",n:"➖"},LB={p:"Pendente",a:"Em andamento",w:"Aguardando",d:"Concluído",n:"N/A"};
 const KL={cfg_ip:"o IP do servidor",cfg_ver:"a versão do ParkingPlus"};
 const $=id=>document.getElementById(id);
@@ -118,7 +119,7 @@ $("gf").onsubmit=async e=>{
   const name=$("gn").value.trim(),email=$("ge").value.trim().toLowerCase();
   if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)){$("gerr").textContent="Informe nome e e-mail válidos.";return}
   if(!db){$("gerr").textContent="Sistema ainda não configurado (Supabase).";return}
-  const {error}=await db.from("checklist_members").upsert({email,name});
+  const {error}=await db.rpc("register_member",{p_name:name,p_email:email});
   if(error){$("gerr").textContent="Não foi possível salvar. Tente novamente.";return}
   user={name,email};ls.set("user",JSON.stringify(user));$("gate").hidden=true;loadMem();
 };
@@ -127,6 +128,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
   document.querySelectorAll(".v").forEach(v=>v.hidden=v.id!=="v-"+b.dataset.v);
   if(b.dataset.v==="r")loadMs();
+  if(b.dataset.v==="e")loadMem();
   window.scrollTo(0,0);
 });
 
@@ -188,12 +190,18 @@ const hl=r=>{
 };
 function showLog(){$("hist").innerHTML=log.length?log.map(hl).join(""):"Nenhuma alteração registrada ainda."}
 function showTeam(){
-  $("team").innerHTML="<div class='li'>Você: <b>"+esc(user?user.name:"—")+"</b><small>"+esc(user?user.email:"")+"</small></div>"+
-   mem.map(m=>"<div class='li'>"+esc(m.name)+"<small>"+esc(m.email)+"</small></div>").join("")+
-   "<div style='margin-top:12px'><button class='btn' id='sw'>Trocar usuário</button></div>";
+  $("team").innerHTML=(mem.length?mem.map(m=>"<div class='li'>"+esc(m.name)+(user&&m.name===user.name?" <small>"+esc(user.email)+" (você)</small>":"")+"</div>").join(""):"<div class='li'>Ninguém cadastrado ainda.</div>")+
+   "<div style='margin-top:14px;display:flex;gap:8px;flex-wrap:wrap'><button class='btn sec' id='sw'>Trocar usuário</button><button class='btn sec' id='lv'>🚪 Sair da equipe</button></div>";
+  $("lv").onclick=async()=>{
+    if(!user||!confirm("Sair da equipe? Você deixará de receber os relatórios por e-mail."))return;
+    const {error}=await db.rpc("leave_team",{p_email:user.email});
+    if(error){alert("Não foi possível sair. Tente novamente.");return}
+    ls.set("user","null");user=null;$("gn").value="";$("ge").value="";
+    $("gerr").textContent="Você saiu da equipe e não receberá mais e-mails.";$("gate").hidden=false;loadMem();
+  };
   $("sw").onclick=()=>{ls.set("user","null");user=null;$("gn").value="";$("ge").value="";$("gate").hidden=false};
 }
-async function loadMem(){const {data}=await db.from("checklist_members").select("*").order("name");mem=data||[];showTeam()}
+async function loadMem(){const {data}=await db.rpc("team_names");mem=data||[];showTeam()}
 async function loadLog(){const {data}=await db.from("checklist_log").select("*").order("at",{ascending:false}).limit(60);log=data||[];showLog()}
 async function loadSt(){const {data}=await db.from("checklist_status").select("*");(data||[]).forEach(r=>{st[r.item_id]=r.status;by[r.item_id]=r.updated_by});paint()}
 const keys={cfg_ip:$("cfg_ip"),cfg_ver:$("cfg_ver")};
@@ -216,7 +224,6 @@ Object.entries(keys).forEach(([k,e])=>e.onchange=async()=>{
    .on("postgres_changes",{event:"*",schema:"public",table:"checklist_status"},p=>{const r=p.new;if(r&&r.item_id){st[r.item_id]=r.status;by[r.item_id]=r.updated_by;paint()}})
    .on("postgres_changes",{event:"*",schema:"public",table:"checklist_config"},p=>{if(p.new&&p.new.key)apc(p.new)})
    .on("postgres_changes",{event:"INSERT",schema:"public",table:"checklist_log"},p=>{log.unshift(p.new);log=log.slice(0,60);showLog()})
-   .on("postgres_changes",{event:"*",schema:"public",table:"checklist_members"},()=>loadMem())
    .subscribe(x=>{$("live").textContent=x==="SUBSCRIBED"?"🟢 ao vivo":"⚪ conectando…";if(x==="SUBSCRIBED"){loadSt();loadCfg();loadLog()}});
 })();
 </script>
