@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<title>Implantação RioSul · WPS</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#0e1116;--card:#161b22;--tx:#e6edf3;--mu:#8b949e;--bd:#262d36;--ac:#3b82f6;--ok:#22c55e;--bar:#0b0e13;color-scheme:dark}
+[data-theme=light]{--bg:#f4f6f9;--card:#fff;--tx:#1b1f24;--mu:#667085;--bd:#e1e5ea;--ac:#2563eb;--ok:#16a34a;--bar:#fff;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:calc(100px + env(safe-area-inset-top,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+#hd{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--bar);border-bottom:1px solid var(--bd);padding-top:env(safe-area-inset-top,0px)}
+.r1{display:flex;align-items:center;gap:10px;padding:8px 12px;height:54px}
+.r1 img{height:32px;max-width:96px;object-fit:contain}
+.r1 b{flex:1;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{background:var(--ok);color:#052e16;font-weight:700;border-radius:99px;padding:2px 10px;font-size:13px}
+.ic{all:unset;cursor:pointer;font-size:19px;padding:4px}
+nav{display:flex}
+nav button{all:unset;flex:1;text-align:center;padding:10px 2px;font-size:12.5px;color:var(--mu);cursor:pointer;border-bottom:2px solid transparent}
+nav button.on{color:var(--tx);border-color:var(--ac);font-weight:600}
+main{max-width:680px;margin:0 auto;padding:12px}
+.v[hidden],#gate[hidden]{display:none}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.cfg{display:flex;gap:10px;flex-wrap:wrap}
+.cfg label{flex:1;min-width:140px;font-size:12px;color:var(--mu)}
+input[type=text],input[type=email],.cfg input{display:block;width:100%;margin-top:3px;font:inherit;font-size:15px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px}
+.row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mu);margin-top:10px}
+#live{margin-left:auto}
+details{background:var(--card);border:1px solid var(--bd);border-radius:12px;margin-bottom:10px;overflow:hidden}
+summary{padding:13px 12px;font-weight:600;cursor:pointer;display:flex;gap:8px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary .n{margin-left:auto;font-weight:400;font-size:12px;color:var(--mu)}
+.it{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--bd)}
+.it button{all:unset;cursor:pointer;font-size:22px;line-height:1}
+.it .t{flex:1;min-width:0}
+.it.d .t{color:var(--mu);text-decoration:line-through}
+.it.hide{display:none}
+.w{display:block;color:var(--mu);font-size:11px}
+.it select{font:inherit;font-size:12px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:5px}
+.bar{height:8px;background:var(--bd);border-radius:99px;overflow:hidden;margin:4px 0 10px}
+.bar i{display:block;height:100%;background:var(--ok)}
+.sr{display:flex;justify-content:space-between;font-size:13px}
+.big{font-size:40px;font-weight:700}
+.li{padding:9px 0;border-top:1px solid var(--bd);font-size:14px}
+.li:first-child{border:0}
+.li small{display:block;color:var(--mu)}
+.btn{all:unset;cursor:pointer;background:var(--ac);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;text-align:center}
+#gate{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+#gate form{width:100%;max-width:380px}
+#gate img{height:44px;margin-bottom:12px}
+#gate label{display:block;margin:12px 0;font-size:13px;color:var(--mu)}
+#gerr{color:#f87171;font-size:13px;min-height:18px}
+</style>
+</head>
+<body>
+<div id="gate">
+<form id="gf" class="card">
+<img src="logo.png" alt="WPS" onerror="this.onerror=null;this.src='logo.svg'">
+<h2 style="margin:0 0 4px">Implantação RioSul</h2>
+<div style="color:var(--mu);font-size:13px">Identifique-se para acessar. Seu nome e e-mail ficam registrados em todas as alterações e você receberá os relatórios de progresso.</div>
+<label>Nome completo<input type="text" id="gn" autocomplete="name" required></label>
+<label>E-mail<input type="email" id="ge" autocomplete="email" inputmode="email" required></label>
+<div id="gerr"></div>
+<button class="btn" style="display:block">Entrar</button>
+</form>
+</div>
+
+<header id="hd">
+<div class="r1">
+<img src="logo.png" alt="WPS" onerror="this.onerror=null;this.src='logo.svg'">
+<b>Implantação RioSul</b><span class="pill" id="pct">0%</span><button class="ic" id="tg" aria-label="Tema"></button>
+</div>
+<nav>
+<button data-v="c" class="on">☑️ Checklist</button>
+<button data-v="r">📊 Resumo</button>
+<button data-v="h">🕘 Histórico</button>
+<button data-v="e">👥 Equipe</button>
+</nav>
+</header>
+
+<main>
+<section id="v-c" class="v">
+<div class="card">
+<div class="cfg">
+<label>🖥️ IP do servidor<input id="cfg_ip" type="text" inputmode="decimal" placeholder="ex.: 10.0.0.100"></label>
+<label>💻 Versão ParkingPlus<input id="cfg_ver" type="text" placeholder="ex.: 7.554.1"></label>
+</div>
+<div class="row"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="only"> Só pendentes</label><span id="live">⚪ conectando…</span></div>
+</div>
+<div id="app"></div>
+</section>
+<section id="v-r" class="v" hidden></section>
+<section id="v-h" class="v" hidden><div class="card" id="hist"></div></section>
+<section id="v-e" class="v" hidden><div class="card" id="team"></div></section>
+</main>
+
+<script>
+const SB_URL="COLE_AQUI_A_PROJECT_URL",SB_KEY="COLE_AQUI_A_ANON_KEY";
+const IC={p:"⬜",a:"🔄",w:"⏳",d:"✅",n:"➖"},LB={p:"Pendente",a:"Em andamento",w:"Aguardando",d:"Concluído",n:"N/A"};
+const KL={cfg_ip:"o IP do servidor",cfg_ver:"a versão do ParkingPlus"};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const fd=x=>new Date(x).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+let user=null;try{user=JSON.parse(ls.get("user")||"null")}catch(e){}
+let items=[],secs=[],els={},st={},by={},lab={},log=[],mem=[];
+const db=(window.supabase&&!SB_URL.startsWith("COLE"))?supabase.createClient(SB_URL,SB_KEY):null;
+
+function setTh(t){document.documentElement.dataset.theme=t;ls.set("tema",t);$("tg").textContent=t==="dark"?"☀️":"🌙";document.querySelector("meta[name=theme-color]").content=t==="dark"?"#0e1116":"#ffffff"}
+setTh(ls.get("tema")||"dark");
+$("tg").onclick=()=>setTh(document.documentElement.dataset.theme==="dark"?"light":"dark");
+
+$("gate").hidden=!!user;
+$("gf").onsubmit=async e=>{
+  e.preventDefault();
+  const name=$("gn").value.trim(),email=$("ge").value.trim().toLowerCase();
+  if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)){$("gerr").textContent="Informe nome e e-mail válidos.";return}
+  if(!db){$("gerr").textContent="Sistema ainda não configurado (Supabase).";return}
+  const {error}=await db.from("checklist_members").upsert({email,name});
+  if(error){$("gerr").textContent="Não foi possível salvar. Tente novamente.";return}
+  user={name,email};ls.set("user",JSON.stringify(user));$("gate").hidden=true;loadMem();
+};
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".v").forEach(v=>v.hidden=v.id!=="v-"+b.dataset.v);
+  if(b.dataset.v==="r")loadMs();
+  window.scrollTo(0,0);
+});
+
+async function setS(it,s){
+  if(!user){$("gate").hidden=false;return}
+  st[it.item_id]=s;by[it.item_id]=user.name;paint();
+  const {error}=await db.from("checklist_status").upsert({item_id:it.item_id,status:s,updated_by:user.name,updated_email:user.email,updated_at:new Date().toISOString()});
+  if(error)$("live").textContent="⚠️ não salvou";
+}
+
+function build(){
+  const m=new Map();
+  items.forEach(i=>{lab[i.item_id]=i.label;st[i.item_id]=i.initial_status;if(!m.has(i.section))m.set(i.section,[]);m.get(i.section).push(i)});
+  m.forEach((arr,name)=>{
+    const d=document.createElement("details"),sm=document.createElement("summary");
+    sm.innerHTML="<span></span><span class='n'></span>";sm.firstChild.textContent=name;d.appendChild(sm);
+    arr.forEach(it=>{
+      const r=document.createElement("div"),b=document.createElement("button"),t=document.createElement("span"),w=document.createElement("small"),sel=document.createElement("select");
+      r.className="it";t.className="t";t.textContent=it.label;w.className="w";t.append(w);
+      Object.keys(LB).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=LB[k];sel.appendChild(o)});
+      b.onclick=()=>setS(it,st[it.item_id]==="d"?"p":"d");sel.onchange=()=>setS(it,sel.value);
+      r.append(b,t,sel);d.appendChild(r);els[it.item_id]={r,b,sel,w};
+    });
+    $("app").appendChild(d);secs.push({name,it:arr,d,cnt:sm.lastChild});
+  });
+}
+
+function paint(){
+  if(!secs.length)return;
+  const only=$("only").checked;let T=0,D=0,sh="";
+  secs.forEach(sc=>{
+    let t=0,d=0;
+    sc.it.forEach(it=>{
+      const s=st[it.item_id],e=els[it.item_id];
+      e.b.textContent=IC[s];e.sel.value=s;e.w.textContent=by[it.item_id]?"por "+by[it.item_id]:"";
+      e.r.className="it "+s+(only&&(s==="d"||s==="n")?" hide":"");
+      if(s!=="n"){t++;if(s==="d")d++}
+    });
+    sc.cnt.textContent=d+"/"+t;T+=t;D+=d;
+    sh+="<div class='sr'><span>"+esc(sc.name)+"</span><span>"+d+"/"+t+"</span></div><div class='bar'><i style='width:"+(t?d*100/t:0)+"%'></i></div>";
+  });
+  const p=T?Math.floor(D*100/T):0;
+  $("pct").textContent=p+"%";
+  $("v-r").innerHTML="<div class='card'><div class='big'>"+p+"%</div><div style='color:var(--mu)'>"+D+" de "+T+" itens concluídos · faltam "+(T-D)+"</div><div class='bar' style='height:12px;margin-top:10px'><i style='width:"+p+"%'></i></div></div><div class='card' id='ms'></div><div class='card'>"+sh+"</div>";
+  if(window._ms)showMs();
+}
+$("only").onchange=paint;
+
+async function loadMs(){const {data}=await db.from("checklist_milestones").select("*");window._ms=data||[];showMs()}
+function showMs(){
+  const el=$("ms");if(!el)return;
+  el.innerHTML="<b>Marcos com e-mail automático</b>"+[50,75,90,100].map(t=>{const m=window._ms.find(x=>x.threshold===t);
+    return "<div class='li'>"+(m?"✅":"⬜")+" "+t+"%"+(m?"<small>atingido em "+fd(m.created_at)+"</small>":"")+"</div>"}).join("");
+}
+
+const hl=r=>{
+  if(r.item_id.startsWith("cfg_"))return "<div class='li'><b>"+esc(r.by_name)+"</b> alterou "+KL[r.item_id]+" para “"+esc(r.value)+"”<small>"+fd(r.at)+"</small></div>";
+  return "<div class='li'><b>"+esc(r.by_name)+"</b> marcou “"+esc(lab[r.item_id]||r.item_id)+"” como "+LB[r.status]+"<small>"+fd(r.at)+"</small></div>";
+};
+function showLog(){$("hist").innerHTML=log.length?log.map(hl).join(""):"Nenhuma alteração registrada ainda."}
+function showTeam(){
+  $("team").innerHTML="<div class='li'>Você: <b>"+esc(user?user.name:"—")+"</b><small>"+esc(user?user.email:"")+"</small></div>"+
+   mem.map(m=>"<div class='li'>"+esc(m.name)+"<small>"+esc(m.email)+"</small></div>").join("")+
+   "<div style='margin-top:12px'><button class='btn' id='sw'>Trocar usuário</button></div>";
+  $("sw").onclick=()=>{ls.set("user","null");user=null;$("gn").value="";$("ge").value="";$("gate").hidden=false};
+}
+async function loadMem(){const {data}=await db.from("checklist_members").select("*").order("name");mem=data||[];showTeam()}
+async function loadLog(){const {data}=await db.from("checklist_log").select("*").order("at",{ascending:false}).limit(60);log=data||[];showLog()}
+async function loadSt(){const {data}=await db.from("checklist_status").select("*");(data||[]).forEach(r=>{st[r.item_id]=r.status;by[r.item_id]=r.updated_by});paint()}
+const keys={cfg_ip:$("cfg_ip"),cfg_ver:$("cfg_ver")};
+const apc=r=>{const e=keys[r.key];if(e&&document.activeElement!==e)e.value=r.value||""};
+async function loadCfg(){const {data}=await db.from("checklist_config").select("*");(data||[]).forEach(apc)}
+Object.entries(keys).forEach(([k,e])=>e.onchange=async()=>{
+  if(!user){$("gate").hidden=false;return}
+  const {error}=await db.from("checklist_config").upsert({key:k,value:e.value.trim(),updated_by:user.name,updated_email:user.email,updated_at:new Date().toISOString()});
+  if(error)$("live").textContent="⚠️ não salvou";
+});
+
+(async()=>{
+  showTeam();showLog();
+  if(!db){$("live").textContent="⚪ configure o Supabase";return}
+  const {data,error}=await db.from("checklist_items").select("*").order("pos");
+  if(error||!data){$("live").textContent="⚠️ erro de conexão";return}
+  items=data;build();
+  await Promise.all([loadSt(),loadCfg(),loadLog(),loadMem()]);
+  db.channel("chk")
+   .on("postgres_changes",{event:"*",schema:"public",table:"checklist_status"},p=>{const r=p.new;if(r&&r.item_id){st[r.item_id]=r.status;by[r.item_id]=r.updated_by;paint()}})
+   .on("postgres_changes",{event:"*",schema:"public",table:"checklist_config"},p=>{if(p.new&&p.new.key)apc(p.new)})
+   .on("postgres_changes",{event:"INSERT",schema:"public",table:"checklist_log"},p=>{log.unshift(p.new);log=log.slice(0,60);showLog()})
+   .on("postgres_changes",{event:"*",schema:"public",table:"checklist_members"},()=>loadMem())
+   .subscribe(x=>{$("live").textContent=x==="SUBSCRIBED"?"🟢 ao vivo":"⚪ conectando…";if(x==="SUBSCRIBED"){loadSt();loadCfg();loadLog()}});
+})();
+</script>
+</body>
+</html>
