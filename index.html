@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Checklist de Implantação – RioSul</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#6a7280;--bd:#e3e6eb;--ac:#2563eb;--ok:#16a34a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111418;--card:#1a1e24;--tx:#e8eaee;--mu:#98a1af;--bd:#2a3039;--ac:#6ea0ff;--ok:#4ade80;color-scheme:dark}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px 14px 60px}
+h1{font-size:20px;margin:4px 0 2px}
+.sub{color:var(--mu);font-size:13px}
+.bar{height:8px;background:var(--bd);border-radius:99px;overflow:hidden;margin:10px 0 4px}
+.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:8px 0;z-index:5}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mu)}
+label.f{display:flex;gap:6px;align-items:center;cursor:pointer}
+#live{margin-left:auto}
+details{background:var(--card);border:1px solid var(--bd);border-radius:12px;margin:10px 0;overflow:hidden}
+summary{padding:12px 14px;font-weight:600;cursor:pointer;display:flex;gap:8px;align-items:center;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary .n{margin-left:auto;font-weight:400;font-size:12px;color:var(--mu);white-space:nowrap}
+.it{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--bd)}
+.it button{all:unset;cursor:pointer;font-size:20px;line-height:1}
+.it .t{flex:1;min-width:0}
+.it.d .t{color:var(--mu);text-decoration:line-through}
+.it.n .t{color:var(--mu)}
+.it select{font:inherit;font-size:12px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:3px 4px}
+.it.hide{display:none}
+.cfg{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0}
+.cfg input{font:inherit;font-size:13px;width:140px;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:4px 6px}
+.w{display:block;color:var(--mu);font-size:11px}
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+<h1>📋 Checklist de Implantação – RioSul</h1>
+<div class="sub cfg"><label>🖥️ Servidor <input id="cfg_ip" placeholder="IP do servidor" inputmode="decimal"></label><label>💻 ParkingPlus <input id="cfg_ver" placeholder="versão"></label></div>
+<div class="bar"><i id="pb"></i></div>
+<div class="row"><span id="pt"></span>
+<label class="f"><input type="checkbox" id="only"> Só pendentes</label>
+<span id="live">⚪ offline</span></div>
+</div>
+<div id="app"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SUPABASE_URL="COLE_AQUI_A_PROJECT_URL";
+const SUPABASE_KEY="COLE_AQUI_A_ANON_KEY";
+const D=`# 🖥️ Servidor
+p Servidor LPR WPS
+d Configuração
+d Backup do servidor
+d Backup (VOPS)
+d TFTPBoot
+d DHCP
+d Papafila
+d Servidor de horário
+d Enterprise
+a App Lojista
+a App Gerente
+p LDAP
+p Mídia Park
+p Integração Academia
+p Troca de IPs após virada
+# 🔗 Integrações
+p Mercado OBA
+w Bodytech – Aguardando SFTP do RioSul
+p Sem Parar
+p ConectCar
+p Veloe
+p Taggy
+p TEF
+p GBS - NFE
+# 🖥️ Manager
+a Instalação do Manager ADM
+p Instalação VOIP
+a Testes VOIP
+p Instalação da Central
+# ⚙️ Configurações
+d Coleta de MACs
+d Atribuição de IPs
+d Tabela de preços
+d Descontos
+d Cartão Abono
+p Usuários LDAP
+d NFE
+d Perfis
+d Código de instalação
+d Motivos de abertura de cancela
+d Cabeçalho do relatório
+d Promoções App Lojista
+d Usuário Enterprise
+# 🎓 Treinamento
+p Treinamento dos caixas
+p Treinamento dos terminais
+p Treinamento dos papafilas
+p Treinamento do Pague Fácil
+p Treinamento da Central
+# 🏗️ Infraestrutura externa
+p Bobinas
+d Organização dos equipamentos
+d Infraestrutura de rede
+d Infraestrutura elétrica
+d Switches
+d Fixação das cancelas
+d Validação das ligações das cancelas
+p Fixação dos terminais
+p Ligação dos terminais
+p Fixação dos Pague Fácil
+p Antenas Papafila
+p Fixação do Checkout
+p Fixação do painel de manobrista
+p Servidor LPR Taggy
+p Fixação das câmeras Taggy
+p Entrega das chaves dos equipamentos ao cliente
+# 💳 Pague Fácil
+d Desativação dos LEDs
+d Windows 11
+d Configurações de rede
+d Instalação do ParkingPlus EPA
+d Startup Delayer
+d Servidor de horário
+d Testes de reinicialização
+d Leitor
+d Testes de leitura
+d Leitor sempre ativo
+d Impressora
+d Testes de impressão
+d VOIP
+p TEF
+d Chaves TEF
+p Mensagem PINPAD
+d Papel de parede
+p Mídia Park
+p Informações do recibo
+p Somente CNPJ
+p Pagamento
+d Pagamento credenciado
+p Testes de cartão abono
+p Desabilitar a leitura do Ean 13
+# 🚗 Terminais de entrada
+d Perto IO ou UPB
+d Papel de parede
+d Chave das OSAS
+p Chave LPR
+d Servidor de horário
+p Mídia Park
+d Desativação dos LEDs
+d LEDs brancos
+d Sinal de presença
+d Impressora
+d Sensor de ticket retirado
+p Informações do ticket
+d QR Code
+d EAN-13
+d Teste de impressão
+d Leitor
+p Testes com credencial
+p Testes com ticket
+p VOIP
+p LPR 1
+p LPR 2
+p Desabilitar a leitura do Ean 13
+# 🚙 Terminais de saída
+d Perto IO ou UPB
+d Papel de parede
+d Chave das OSAS
+p Chave LPR
+d Servidor de horário
+p Mídia Park
+d Desativação dos LEDs
+d LEDs brancos
+d Sinal de presença
+d Leitor
+p Testes com credencial
+p Testes com ticket
+p VOIP
+p LPR 1
+p LPR 2
+p Desabilitar a leitura do Ean 13
+p Ticketless
+p LPR Relay
+# 💰 Caixa
+d Servidor de horário
+p Ticket perdido
+n VOIP – Não se aplica
+d Impressora
+p Informações do recibo
+d Leitor
+p Testes de leitura
+p Testes de pagamento
+d Gaveta
+d Redimensionamento da tela
+p TEF
+p Informações do recibo
+p Pagamento
+p Pagamento credenciado
+p Testes de cartão abono
+p Desabilitar a leitura do Ean 13
+# 🧾 VOPS
+d Impressora
+p Testes de impressão
+p Leitor
+p Cartão manobrista
+d Testes de fluxo
+# 📺 Painel
+d Layout novo
+d Fluxo
+d Logo cliente
+# 🏋️ Validador Academia
+p Layout Academia
+p Regras de negócio
+d Desativação dos LEDs
+d PF Linux
+d Configurações de rede
+d Servidor de horário
+d Testes de reinicialização
+p Leitor
+p Testes de leitura
+d Leitor sempre ativo
+p Impressora
+p Testes de impressão
+p VOIP
+p Pagamento por placa
+p Chaves TEF
+p Mensagem PINPAD
+p Papel de parede
+p Informações do recibo
+p Desabilitar a leitura do Ean 13
+# 📱 Papafila
+d Instalação do APK
+d Chave de ativação
+p Antenas Wi-Fi
+p Testes de impressão
+p Informações do recibo
+p Testes de fluxo
+p Controle da Área VIP
+p Pagamento
+p TEF
+p Chave LPR
+# 🚧 Cancelas
+d Firmware
+d LED branco
+d Trimpot 7
+d Fixação
+d Fixação dos braços
+d Alinhamento das barreiras
+# 📌 Pendências – Servidor / Integrações
+p Configuração do servidor LPR Taggy – 27/10
+p Gerar chaves LPR
+p Integração do Mercado
+p Testar cartão de abono Pague Fácil
+# 📌 Pendências – Equipamentos / Instalações
+p Instalar totem na Entrada do Valet
+p Instalar Checkout e Painel no Valet
+p Verificar parafusos faltantes das cancelas
+p Chaves dos equipamentos
+p Realizar vedação das cancelas da expansão
+p Aplicar graxa branca nas cancelas
+p Alterar fechamento das cancelas para a base do detector (NEPOS)
+p Instalar adaptador de áudio VOPS – manobra pendente
+# 📌 Pendências – Sistema / Configurações
+p Corrigir erro no APP Lojista ao inserir observações
+p Criar tarifa para Carro Oficial
+p Cadastrar usuários do APP Lojista – Caixa
+p Forçar exibição do Pop-up Central
+p Configurar entrada manual no Manager
+p Configurar VNC na Central
+# 📌 Pendências – Valet / Pagamentos
+p Verificar chamada do Valet e pagamento pelo aplicativo do shopping`;
+const IC={p:"⬜",a:"🔄",w:"⏳",d:"✅",n:"➖"};
+const LB={p:"Pendente",a:"Em andamento",w:"Aguardando",d:"Concluído",n:"N/A"};
+const secs=[];let n=0;
+D.split("\n").forEach(l=>{
+  if(l[0]==="#")secs.push({t:l.slice(2),it:[]});
+  else secs[secs.length-1].it.push({id:"i"+(n++),s:l[0],t:l.slice(2)});
+});
+const st={},by={};let db=null,me="";try{me=localStorage.getItem("nome")||""}catch(e){}const els={};
+const app=document.getElementById("app");
+function cur(it){return st[it.id]||it.s}
+async function setS(it,s){
+  if(!me){me=(prompt("Seu nome (aparece nas alterações):")||"").trim().slice(0,30);try{localStorage.setItem("nome",me)}catch(e){}}
+  st[it.id]=s;by[it.id]=me;paint();
+  if(!db)return;
+  const {error}=await db.from("checklist_status").upsert({item_id:it.id,status:s,updated_by:me,updated_at:new Date().toISOString()});
+  if(error)document.getElementById("live").textContent="⚠️ não salvou";
+}
+secs.forEach((sc,si)=>{
+  const d=document.createElement("details");
+  d.open=sc.it.some(i=>i.s!=="d"&&i.s!=="n");
+  const sm=document.createElement("summary");
+  sm.innerHTML='<span></span><span class="n"></span>';
+  sm.firstChild.textContent=sc.t;d.appendChild(sm);
+  sc.it.forEach(it=>{
+    const r=document.createElement("div");r.className="it";
+    const b=document.createElement("button");
+    const t=document.createElement("span");t.className="t";t.textContent=it.t;const w=document.createElement("small");w.className="w";t.append(w);
+    const sel=document.createElement("select");
+    Object.keys(LB).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=LB[k];sel.appendChild(o)});
+    b.onclick=()=>setS(it,cur(it)==="d"?"p":"d");
+    sel.onchange=()=>setS(it,sel.value);
+    r.append(b,t,sel);d.appendChild(r);
+    els[it.id]={r,b,sel,w};
+  });
+  sc.el=d;sc.cnt=sm.lastChild;app.appendChild(d);
+});
+function paint(){
+  const only=document.getElementById("only").checked;
+  let tot=0,done=0;
+  secs.forEach(sc=>{
+    let t=0,dn=0;
+    sc.it.forEach(it=>{
+      const s=cur(it),e=els[it.id];
+      e.w.textContent=by[it.id]?"por "+by[it.id]:"";e.b.textContent=IC[s];e.sel.value=s;
+      e.r.className="it "+s+((only&&(s==="d"||s==="n"))?" hide":"");
+      if(s!=="n"){t++;if(s==="d")dn++}
+    });
+    sc.cnt.textContent=dn+"/"+t;tot+=t;done+=dn;
+  });
+  const p=tot?Math.round(done*100/tot):0;
+  document.getElementById("pb").style.width=p+"%";
+  document.getElementById("pt").textContent=p+"% concluído ("+done+"/"+tot+")";
+}
+document.getElementById("only").onchange=paint;
+paint();
+(async()=>{
+  const L=document.getElementById("live");
+  if(!window.supabase||SUPABASE_URL.startsWith("COLE")){L.textContent="⚪ configure o Supabase";return}
+  db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  const ap=r=>{st[r.item_id]=r.status;by[r.item_id]=r.updated_by||""};
+  const load=async()=>{const {data,error}=await db.from("checklist_status").select("*");if(error){L.textContent="⚠️ erro de conexão";return}data.forEach(ap);paint()};
+  await load();
+  const keys={cfg_ip:document.getElementById("cfg_ip"),cfg_ver:document.getElementById("cfg_ver")};
+  const apc=r=>{const e=keys[r.key];if(e&&document.activeElement!==e)e.value=r.value||""};
+  const loadc=async()=>{const {data}=await db.from("checklist_config").select("*");(data||[]).forEach(apc)};
+  Object.entries(keys).forEach(([k,e])=>e.onchange=async()=>{
+    if(!me){me=(prompt("Seu nome (aparece nas alterações):")||"").trim().slice(0,30);try{localStorage.setItem("nome",me)}catch(x){}}
+    const {error}=await db.from("checklist_config").upsert({key:k,value:e.value.trim(),updated_by:me,updated_at:new Date().toISOString()});
+    if(error)L.textContent="⚠️ não salvou";
+  });
+  await loadc();
+  db.channel("cfgch").on("postgres_changes",{event:"*",schema:"public",table:"checklist_config"},p=>{if(p.new&&p.new.key)apc(p.new)}).subscribe();
+  db.channel("chk").on("postgres_changes",{event:"*",schema:"public",table:"checklist_status"},p=>{if(p.new&&p.new.item_id){ap(p.new);paint()}})
+   .subscribe(x=>{L.textContent=x==="SUBSCRIBED"?"🟢 ao vivo":"⚪ conectando…";if(x==="SUBSCRIBED"){load();loadc()}});
+})();
+</script>
+</body>
+</html>
