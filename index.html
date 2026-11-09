@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0c0d0f">
-<title>Implantação RioSul · WPS</title>
+<title>Checklist de Implantação · WPS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -152,7 +152,7 @@ body>*:not(#rep){display:none!important}
 </div>
 
 <header id="hd">
-<div class="r1"><img src="logo.png" alt="WPS"><h1>Implantação RioSul</h1><span id="pct">0%</span><button class="tg" id="tg" aria-label="Alternar tema"></button></div>
+<div class="r1"><img src="logo.png" alt="WPS"><h1 id="pn">Implantação</h1><span id="pct">0%</span><button class="tg" id="tg" aria-label="Alternar tema"></button></div>
 <div class="hp"><i id="hpi"></i></div>
 <nav aria-label="Seções do aplicativo">
 <button data-v="c" aria-current="page">Checklist</button><button data-v="r">Resumo</button><button data-v="h">Histórico</button><button data-v="e">Equipe</button>
@@ -163,8 +163,9 @@ body>*:not(#rep){display:none!important}
 <section id="v-c" class="v">
 <div id="ro" class="card"><span>Modo leitura. Identifique-se para editar.</span><button class="btn" id="ri">Entrar</button></div>
 <div class="card">
-<h2>Servidor</h2>
+<h2>Instalação</h2>
 <div class="cfg">
+<label style="grid-column:1/-1">Nome da instalação<input id="cfg_nome" type="text" maxlength="60" placeholder="ex.: RioSul" autocomplete="off"></label>
 <label>IP do servidor<input id="cfg_ip" type="text" inputmode="decimal" placeholder="10.0.0.100" autocomplete="off" aria-describedby="ipe"><div class="er" id="ipe" role="alert"></div></label>
 <label>Versão do ParkingPlus<input id="cfg_ver" type="text" placeholder="7.554.1" maxlength="30" autocomplete="off"></label>
 </div>
@@ -184,7 +185,7 @@ body>*:not(#rep){display:none!important}
 <script>
 const SB_URL=(window.CFG&&CFG.url)||"COLE_AQUI",SB_KEY=(window.CFG&&CFG.key)||"COLE_AQUI";
 const LB={p:"Pendente",a:"Em andamento",w:"Aguardando",d:"Concluído",n:"N/A"};
-const KL={cfg_ip:"o IP do servidor",cfg_ver:"a versão do ParkingPlus"};
+const KL={cfg_nome:"o nome da instalação",cfg_ip:"o IP do servidor",cfg_ver:"a versão do ParkingPlus"};
 const ipRe=/^((25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(25[0-5]|2[0-4]\d|1?\d?\d)$/;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -308,7 +309,7 @@ $("sf").onsubmit=async e=>{
 
 function report(){
   const t=window._tot||{T:0,D:0,p:0};
-  let h="<div class='rh'><img src='logo.png' alt='WPS'><div><h1>Implantação RioSul</h1><div>Relatório gerado em "+fd(Date.now())+(user?" por "+esc(user.name):"")+"</div><div>Servidor: "+esc($("cfg_ip").value||"não informado")+" · ParkingPlus: "+esc($("cfg_ver").value||"não informada")+"</div></div></div>";
+  let h="<div class='rh'><img src='logo.png' alt='WPS'><div><h1>"+esc($("pn").textContent)+"</h1><div>Relatório gerado em "+fd(Date.now())+(user?" por "+esc(user.name):"")+"</div><div>Servidor: "+esc($("cfg_ip").value||"não informado")+" · ParkingPlus: "+esc($("cfg_ver").value||"não informada")+"</div></div></div>";
   h+="<div class='rs'><b>"+t.p+"%</b> concluído · "+t.D+" de "+t.T+" itens</div><div class='rb'><i style='width:"+t.p+"%'></i></div>";
   secs.forEach(sc=>{
     h+="<h2>"+esc(clean(sc.name))+"</h2><table><tr><th>Item</th><th>Status</th><th>Responsável</th><th>Prazo</th><th>Observação</th></tr>";
@@ -351,8 +352,10 @@ async function loadMem(){const {data}=await db.rpc("team_names");mem=data||[];$(
 async function loadNt(){const {data}=await db.from("checklist_notes").select("*");(data||[]).forEach(r=>{nt[r.item_id]={owner:r.owner,due:r.due,note:r.note}});paint()}
 async function loadLog(){const {data}=await db.from("checklist_log").select("*").order("at",{ascending:false}).limit(60);log=data||[];showLog()}
 async function loadSt(){const {data}=await db.from("checklist_status").select("*");(data||[]).forEach(r=>{st[r.item_id]=r.status;by[r.item_id]=r.updated_by;ts[r.item_id]=r.updated_at});paint()}
-const keys={cfg_ip:$("cfg_ip"),cfg_ver:$("cfg_ver")};
-const apc=r=>{const e=keys[r.key];if(e&&document.activeElement!==e)e.value=r.value||""};
+const keys={cfg_nome:$("cfg_nome"),cfg_ip:$("cfg_ip"),cfg_ver:$("cfg_ver")};
+function applyName(){const n=(keys.cfg_nome.value||"").trim();$("pn").textContent=n?"Implantação "+n:"Implantação";document.title=(n?n+" · ":"")+"Checklist de Implantação · WPS"}
+keys.cfg_nome.oninput=applyName;
+const apc=r=>{const e=keys[r.key];if(e&&document.activeElement!==e)e.value=r.value||"";if(r.key==="cfg_nome")applyName()};
 async function loadCfg(){const {data}=await db.from("checklist_config").select("*");(data||[]).forEach(apc)}
 keys.cfg_ip.oninput=()=>{keys.cfg_ip.removeAttribute("aria-invalid");$("ipe").textContent=""};
 Object.entries(keys).forEach(([k,e])=>e.onchange=()=>{
