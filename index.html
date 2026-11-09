@@ -109,7 +109,7 @@ details[open] .sh::after{transform:rotate(-135deg);margin-top:3px}
 .dt:focus-visible{outline:2px solid var(--ac)}
 textarea{min-height:92px;resize:vertical}
 #rep{display:none}
-@page{margin:14mm}
+@page{margin:14mm 14mm 16mm;@bottom-right{content:"Página " counter(page) " de " counter(pages);font:9px Arial,sans-serif;color:#666}}
 @media print{
 body{padding:0!important;background:#fff!important;color:#111!important}
 body>*:not(#rep){display:none!important}
@@ -123,6 +123,24 @@ body>*:not(#rep){display:none!important}
 #rep table{width:100%;border-collapse:collapse}
 #rep th,#rep td{border-bottom:1px solid #ddd;padding:3px 5px;text-align:left;vertical-align:top}
 #rep th{background:#f2f2f2}#rep tr{break-inside:avoid}
+#rep{--ok:#1f9a58;--pr:#2563eb;--wt:#d69a0a;--er:#c0392b;--mu:#666;--bd:#ddd;--tx:#111;--s2:#f2f2f2;--pn:#c3c7ce;--ac:#E8420A}
+#rep .kp{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 12px}
+#rep .kp div{border:1px solid #ddd;border-radius:6px;padding:8px}
+#rep .kp b{display:block;font:700 17px "JetBrains Mono",monospace}
+#rep .kp span{font-size:10px;color:#666}
+#rep .r2{display:grid;grid-template-columns:190px 1fr;gap:16px;align-items:start}
+#rep .lg div{display:flex;gap:6px;align-items:center;font-size:11px;margin:3px 0}
+#rep .lg i{width:10px;height:10px;border-radius:2px;display:inline-block;flex:none}
+#rep .lh{display:flex;gap:16px;margin:2px 0 10px}
+#rep .sbr{display:grid;grid-template-columns:36% 1fr 40px;gap:8px;align-items:center;margin:4px 0;font-size:10.5px}
+#rep .sbb{display:flex;height:9px;background:#eee;border-radius:5px;overflow:hidden}
+#rep .sbb i{display:block;height:100%}
+#rep .pg{break-before:page}
+#rep h2.rt{border-bottom:1px solid #ddd;padding-bottom:3px;margin:16px 0 8px;font-size:14px}
+#rep .nota{font-size:10px;color:#666;font-weight:400}
+#rep .st{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+#rep .pj td:first-child{width:55%;color:#444}
+
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -132,7 +150,7 @@ body>*:not(#rep){display:none!important}
 <form id="gf">
 <img src="logo.png" alt="WPS">
 <h2 id="gt">Identificação</h2>
-<div class="mut">Para editar, informe seu nome e e-mail. Eles ficam registrados em cada alteração, e você recebe os relatórios de progresso.</div>
+<div class="mut">Para editar, informe seu nome e e-mail. Eles ficam registrados em cada alteração.</div>
 <label>Nome completo<input type="text" id="gn" autocomplete="name" required></label>
 <label>E-mail<input type="email" id="ge" autocomplete="email" inputmode="email" required></label>
 <div class="er" id="gerr" role="alert"></div>
@@ -168,6 +186,7 @@ body>*:not(#rep){display:none!important}
 <label style="grid-column:1/-1">Nome da instalação<input id="cfg_nome" type="text" maxlength="60" placeholder="ex.: RioSul" autocomplete="off"></label>
 <label>IP do servidor<input id="cfg_ip" type="text" inputmode="decimal" placeholder="10.0.0.100" autocomplete="off" aria-describedby="ipe"><div class="er" id="ipe" role="alert"></div></label>
 <label>Versão do ParkingPlus<input id="cfg_ver" type="text" placeholder="7.554.1" maxlength="30" autocomplete="off"></label>
+<label>Data meta de entrega<input id="cfg_meta" type="date"></label>
 </div>
 </div>
 <div class="bar"><input type="search" id="q" placeholder="Buscar item" aria-label="Buscar item"><button class="chip" id="only" aria-pressed="false">Só pendentes</button><button class="chip" id="late" aria-pressed="false">Atrasados</button></div>
@@ -185,7 +204,7 @@ body>*:not(#rep){display:none!important}
 <script>
 const SB_URL=(window.CFG&&CFG.url)||"COLE_AQUI",SB_KEY=(window.CFG&&CFG.key)||"COLE_AQUI";
 const LB={p:"Pendente",a:"Em andamento",w:"Aguardando",d:"Concluído",n:"N/A"};
-const KL={cfg_nome:"o nome da instalação",cfg_ip:"o IP do servidor",cfg_ver:"a versão do ParkingPlus"};
+const KL={cfg_nome:"o nome da instalação",cfg_ip:"o IP do servidor",cfg_ver:"a versão do ParkingPlus",cfg_meta:"a data meta de entrega"};
 const ipRe=/^((25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(25[0-5]|2[0-4]\d|1?\d?\d)$/;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -231,7 +250,7 @@ $("gf").onsubmit=async e=>{
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("nav button").forEach(x=>x===b?x.setAttribute("aria-current","page"):x.removeAttribute("aria-current"));
   document.querySelectorAll(".v").forEach(v=>v.hidden=v.id!=="v-"+b.dataset.v);
-  if(db){if(b.dataset.v==="r")loadMs();if(b.dataset.v==="e")loadMem()}
+  if(db&&b.dataset.v==="e")loadMem();
   window.scrollTo(0,0);
 });
 
@@ -288,8 +307,7 @@ function paint(){
   });
   const p=T?Math.floor(D*100/T):0;window._tot={T,D,p};
   $("pct").textContent=p+"%";$("hpi").style.width=p+"%";
-  $("v-r").innerHTML="<div class='card'><div class='big'>"+p+"%</div><div class='mut' style='margin-top:6px'>"+D+" de "+T+" itens concluídos</div><div class='pb'><i style='width:"+p+"%'></i></div><div class='st4'><div><b>"+c.p+"</b>Pendentes</div><div><b>"+c.a+"</b>Em andamento</div><div><b>"+c.w+"</b>Aguardando</div><div><b>"+LT+"</b>Atrasados</div></div><div class='acts'><button class='btn' id='pdf'>Gerar relatório em PDF</button></div></div><div class='card'><h2>Marcos de e-mail</h2><div id='ms'></div></div><div class='card'><h2>Progresso por seção</h2>"+sh+"</div>";
-  if(window._ms)showMs();
+  $("v-r").innerHTML="<div class='card'><div class='big'>"+p+"%</div><div class='mut' style='margin-top:6px'>"+D+" de "+T+" itens concluídos</div><div class='pb'><i style='width:"+p+"%'></i></div><div class='st4'><div><b>"+c.p+"</b>Pendentes</div><div><b>"+c.a+"</b>Em andamento</div><div><b>"+c.w+"</b>Aguardando</div><div><b>"+LT+"</b>Atrasados</div></div><div class='acts'><button class='btn' id='pdf'>Gerar relatório (PDF)</button></div></div><div class='card'><h2>Progresso por seção</h2>"+sh+"</div>";
 }
 $("only").onclick=()=>{const b=$("only");b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")==="true"?"false":"true");paint()};
 $("q").oninput=paint;
@@ -307,31 +325,129 @@ $("sf").onsubmit=async e=>{
   nt[cur.item_id]={owner:row.owner,due:row.due,note:row.note};$("sheet").hidden=true;paint();toast("Detalhes salvos");
 };
 
-function report(){
-  const t=window._tot||{T:0,D:0,p:0};
-  let h="<div class='rh'><img src='logo.png' alt='WPS'><div><h1>"+esc($("pn").textContent)+"</h1><div>Relatório gerado em "+fd(Date.now())+(user?" por "+esc(user.name):"")+"</div><div>Servidor: "+esc($("cfg_ip").value||"não informado")+" · ParkingPlus: "+esc($("cfg_ver").value||"não informada")+"</div></div></div>";
-  h+="<div class='rs'><b>"+t.p+"%</b> concluído · "+t.D+" de "+t.T+" itens</div><div class='rb'><i style='width:"+t.p+"%'></i></div>";
-  secs.forEach(sc=>{
-    h+="<h2>"+esc(clean(sc.name))+"</h2><table><tr><th>Item</th><th>Status</th><th>Responsável</th><th>Prazo</th><th>Observação</th></tr>";
-    sc.it.forEach(it=>{const n=nt[it.item_id]||{};h+="<tr><td>"+esc(it.label)+"</td><td>"+LB[st[it.item_id]]+"</td><td>"+esc(n.owner||"")+"</td><td>"+(n.due?dm(n.due):"")+"</td><td>"+esc(n.note||"")+"</td></tr>"});
-    h+="</table>";
+//#HELP_START
+const COL={d:"var(--ok)",a:"var(--pr)",w:"var(--wt)",p:"var(--pn)",n:"var(--s2)"};
+const pad2=n=>String(n).padStart(2,"0");
+const dk=d=>{const x=new Date(d);return x.getFullYear()+"-"+pad2(x.getMonth()+1)+"-"+pad2(x.getDate())};
+const addD=(k,n)=>{const x=new Date(k+"T12:00:00");x.setDate(x.getDate()+n);return dk(x)};
+const diffD=(a,b)=>Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5);
+const fmtN=n=>(Math.round(n*10)/10).toFixed(1).replace(".",",");
+function series(items,ev,today,T,D){
+  const s={};items.forEach(i=>{s[i.item_id]=i.initial_status});
+  const cnt=()=>{let d=0,t=0;for(const k in s){if(s[k]!=="n"){t++;if(s[k]==="d")d++}}return[d,t]};
+  const [d0,t0]=cnt(),byDay=new Map();
+  ev.forEach(e=>{if(!(e.item_id in s))return;s[e.item_id]=e.status;byDay.set(dk(e.at),cnt())});
+  const days=[...byDay.keys()].sort();
+  const start=days.length&&days[0]<=today?days[0]:today;
+  const out=[{k:addD(start,-1),d:d0,t:t0}];let last=[d0,t0];
+  for(let k=start;k<=today;k=addD(k,1)){if(byDay.has(k))last=byDay.get(k);out.push({k,d:last[0],t:last[1]})}
+  out[out.length-1]={k:today,d:D,t:T};
+  return{pts:out,d0,start};
+}
+function paces(pts,today,D,d0,start){
+  const ref=addD(today,-7),p=pts.filter(x=>x.k<=ref).pop()||pts[0];
+  return{p7:Math.max(0,(D-p.d)/Math.max(1,diffD(p.k,today))),pa:Math.max(0,(D-d0)/Math.max(1,diffD(start,today)+1))};
+}
+function projDate(rem,pace,today){if(rem<=0)return today;if(pace<=0)return null;const n=Math.ceil(rem/pace);return n>1095?null:addD(today,n)}
+function lineChart(pts,pj,meta,today){
+  const W=640,H=230,L=40,R=16,Tp=16,B=28,x0=pts[0].k;
+  let x1=today;if(pj&&pj>x1)x1=pj;if(meta&&meta>x1)x1=meta;
+  const span=Math.max(1,diffD(x0,x1)),X=k=>L+(diffD(x0,k)/span)*(W-L-R),Y=v=>Tp+(1-v/100)*(H-Tp-B);
+  const pc=p=>p.t?p.d*100/p.t:0,f=n=>n.toFixed(1);let g="";
+  [0,25,50,75,100].forEach(v=>{g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+f(Y(v))+'" y2="'+f(Y(v))+'" stroke="var(--bd)"/><text x="'+(L-6)+'" y="'+f(Y(v)+3)+'" text-anchor="end" font-size="10" fill="var(--mu)">'+v+'%</text>'});
+  for(let i=0;i<=4;i++){const k=addD(x0,Math.round(span*i/4));g+='<text x="'+f(X(k))+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="var(--mu)">'+k.slice(8)+"/"+k.slice(5,7)+'</text>'}
+  g+='<path d="'+pts.map((p,i)=>(i?"L":"M")+f(X(p.k))+" "+f(Y(pc(p)))).join(" ")+'" fill="none" stroke="var(--ok)" stroke-width="2.5"/>';
+  const lp=pts[pts.length-1];
+  if(pj&&pj>today)g+='<path d="M'+f(X(lp.k))+" "+f(Y(pc(lp)))+" L"+f(X(pj))+" "+f(Y(100))+'" fill="none" stroke="var(--pr)" stroke-width="2" stroke-dasharray="6 4"/><circle cx="'+f(X(pj))+'" cy="'+f(Y(100))+'" r="3.5" fill="var(--pr)"/>';
+  if(meta&&meta>=x0)g+='<line x1="'+f(X(meta))+'" x2="'+f(X(meta))+'" y1="'+Tp+'" y2="'+(H-B)+'" stroke="var(--er)" stroke-width="1.5" stroke-dasharray="3 3"/><text x="'+f(X(meta)-4)+'" y="'+(Tp+10)+'" text-anchor="end" font-size="10" fill="var(--er)">Meta '+meta.slice(8)+"/"+meta.slice(5,7)+'</text>';
+  g+='<circle cx="'+f(X(lp.k))+'" cy="'+f(Y(pc(lp)))+'" r="4" fill="var(--ok)"/>';
+  return'<svg viewBox="0 0 '+W+" "+H+'" width="100%" role="img" aria-label="Evolução e projeção do progresso">'+g+'</svg>';
+}
+function donut(c,p){
+  const tot=c.d+c.a+c.w+c.p,R=42,C=2*Math.PI*R;let off=0,g="";
+  ["d","a","w","p"].forEach(k=>{const v=c[k];if(!v||!tot)return;const len=v/tot*C;g+='<circle cx="60" cy="60" r="'+R+'" fill="none" stroke="'+COL[k]+'" stroke-width="16" stroke-dasharray="'+len.toFixed(2)+" "+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 60 60)"/>';off+=len});
+  return'<svg viewBox="0 0 120 120" width="150" height="150" role="img" aria-label="Distribuição por status">'+g+'<text x="60" y="66" text-anchor="middle" font-size="21" font-weight="700" fill="var(--tx)">'+p+'%</text></svg>';
+}
+//#HELP_END
+
+async function fullLog(){
+  let all=[],from=0;
+  for(let i=0;i<8;i++){
+    const {data,error}=await db.from("checklist_log").select("item_id,status,at").not("status","is",null).order("at",{ascending:true}).range(from,from+999);
+    if(error||!data)break;all=all.concat(data);if(data.length<1000)break;from+=1000;
+  }
+  return all;
+}
+async function report(){
+  if(!secs.length)return;
+  toast("Gerando relatório");
+  let ev=[];try{ev=await fullLog()}catch(e){}
+  const today=tdy(),meta=(keys.cfg_meta.value||"").trim();
+  const c={p:0,a:0,w:0,d:0,n:0},pp={};let noOwn=0;const late=[],soon=[],wait=[];
+  items.forEach(it=>{
+    const s=st[it.item_id],n=nt[it.item_id]||{};c[s]++;
+    if(s==="d"){const w=by[it.item_id]||"Não identificado";pp[w]=(pp[w]||0)+1}
+    if(s==="d"||s==="n")return;
+    if(!n.owner)noOwn++;
+    if(n.due&&n.due<today)late.push({it,n,d:diffD(n.due,today)});
+    else if(n.due&&diffD(today,n.due)<=14)soon.push({it,n,d:diffD(today,n.due)});
+    if(s==="w"&&ts[it.item_id])wait.push({it,n,d:Math.max(0,diffD(dk(ts[it.item_id]),today))});
   });
-  $("rep").innerHTML=h;window.print();
+  const T=c.p+c.a+c.w+c.d,D=c.d,rem=T-D,pct=T?Math.floor(D*100/T):0;
+  const sr=series(items,ev,today,T,D),pc=paces(sr.pts,today,D,sr.d0,sr.start);
+  const pace=pc.p7>0?pc.p7:pc.pa,pj=projDate(rem,pace,today),pj7=projDate(rem,pc.p7,today),pja=projDate(rem,pc.pa,today);
+  const dl=meta?diffD(today,meta):null;
+  let sit="Dados insuficientes para projetar";
+  if(rem===0)sit="Concluído";
+  else if(meta){
+    if(dl<0)sit="Meta vencida, com "+rem+" itens pendentes";
+    else if(!pj)sit="Em risco: sem avanço recente";
+    else sit=pj<=meta?"No prazo":"Em risco: término projetado "+diffD(meta,pj)+" dia(s) após a meta";
+  }else if(pj)sit="Data meta não definida";
+  const L=(a,b)=>a?dm(a):b;
+  const tile=(v,l)=>"<div><b>"+v+"</b><span>"+l+"</span></div>";
+  const tbl=(head,rows)=>rows.length?"<table><tr>"+head.map(h=>"<th>"+h+"</th>").join("")+"</tr>"+rows.map(r=>"<tr>"+r.map(x=>"<td>"+x+"</td>").join("")+"</tr>").join("")+"</table>":"<div class='nota'>Nenhum item.</div>";
+  const sec=it=>esc(clean(it.section)),own=n=>esc(n.owner||"sem responsável");
+  const dots=k=>"<span class='st' style='background:"+COL[k]+"'></span>";
+  const secBars=secs.map(sc=>{
+    const k={p:0,a:0,w:0,d:0};sc.it.forEach(it=>{const s=st[it.item_id];if(s!=="n")k[s]++});
+    const t=k.p+k.a+k.w+k.d,sg=x=>"<i style='width:"+(t?k[x]*100/t:0)+"%;background:"+COL[x]+"'></i>";
+    return "<div class='sbr'><span>"+esc(clean(sc.name))+"</span><span class='sbb'>"+sg("d")+sg("a")+sg("w")+sg("p")+"</span><span>"+k.d+"/"+t+"</span></div>";
+  }).join("");
+  const people=Object.entries(pp).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,v])=>[esc(n),v]);
+  const evt=r=>r.kind==="note"?"atualizou “"+esc(lab[r.item_id]||r.item_id)+"”: "+esc(r.value):r.item_id.startsWith("cfg_")?"alterou "+KL[r.item_id]+" para "+esc(r.item_id==="cfg_meta"&&r.value?dm(r.value):r.value):"“"+esc(lab[r.item_id]||r.item_id)+"” para "+LB[r.status];
+  const lg=[["d","Concluído"],["a","Em andamento"],["w","Aguardando"],["p","Pendente"]].map(([k,l])=>"<div><i style='background:"+COL[k]+"'></i>"+l+": <b>"+c[k]+"</b> ("+(T?Math.round(c[k]*100/T):0)+"%)</div>").join("")+(c.n?"<div class='nota'>"+c.n+" item(ns) N/A não entram no cálculo.</div>":"");
+  let h="<div class='rh'><img src='logo.png' alt='WPS'><div><h1>"+esc($("pn").textContent)+"</h1><div>Relatório de andamento · gerado em "+fd(Date.now())+(user?" por "+esc(user.name):"")+"</div><div>Servidor: "+esc($("cfg_ip").value||"não informado")+" · ParkingPlus: "+esc($("cfg_ver").value||"não informada")+" · Meta: "+L(meta,"não definida")+"</div></div></div>";
+  h+="<h2 class='rt'>Visão geral</h2><div class='rs'><b>"+pct+"%</b> concluído · "+D+" de "+T+" itens</div><div class='rb'><i style='width:"+pct+"%'></i></div>";
+  h+="<div class='kp'>"+tile(D+"/"+T,"Itens concluídos")+tile(c.a,"Em andamento")+tile(c.w,"Aguardando")+tile(c.p,"Pendentes")+tile(late.length,"Atrasados")+tile(noOwn,"Pendentes sem responsável")+tile(diffD(sr.start,today)+1,"Dias de acompanhamento")+tile(dl===null?"—":dl,"Dias até a meta")+"</div>";
+  h+="<div class='r2'><div class='dn'>"+donut(c,pct)+"<div class='lg'>"+lg+"</div></div><div><h2>Progresso por seção</h2>"+secBars+"</div></div>";
+  h+="<h2 class='rt pg'>Evolução e projeção</h2>"+lineChart(sr.pts,pj,meta||null,today);
+  h+="<div class='lg lh'><div><i style='background:"+COL.d+"'></i>Realizado</div><div><i style='background:var(--pr)'></i>Projeção no ritmo atual</div><div><i style='background:var(--er)'></i>Data meta</div></div>";
+  h+="<table class='pj'><tr><td>Situação</td><td><b>"+sit+"</b></td></tr><tr><td>Itens restantes</td><td>"+rem+"</td></tr><tr><td>Ritmo dos últimos 7 dias</td><td>"+fmtN(pc.p7)+" itens/dia</td></tr><tr><td>Ritmo médio desde o início</td><td>"+fmtN(pc.pa)+" itens/dia</td></tr><tr><td>Término projetado (ritmo de 7 dias)</td><td>"+L(pj7,"sem projeção")+"</td></tr><tr><td>Término projetado (ritmo médio)</td><td>"+L(pja,"sem projeção")+"</td></tr><tr><td>Ritmo necessário para cumprir a meta</td><td>"+(meta&&dl>0&&rem>0?fmtN(rem/dl)+" itens/dia":"—")+"</td></tr></table>";
+  h+="<div class='nota'>Projeções em dias corridos, a partir do histórico de alterações. Servem como estimativa e mudam conforme o ritmo da equipe.</div>";
+  h+="<h2 class='rt'>Prazos e pontos de atenção</h2><h2>Atrasados ("+late.length+")</h2>"+tbl(["Item","Seção","Responsável","Prazo","Atraso"],late.sort((a,b)=>b.d-a.d).slice(0,15).map(x=>[esc(x.it.label),sec(x.it),own(x.n),dm(x.n.due),x.d+" dia(s)"]));
+  h+="<h2>Vencem em até 14 dias ("+soon.length+")</h2>"+tbl(["Item","Seção","Responsável","Prazo","Faltam"],soon.sort((a,b)=>a.d-b.d).slice(0,15).map(x=>[esc(x.it.label),sec(x.it),own(x.n),dm(x.n.due),x.d+" dia(s)"]));
+  h+="<h2>Aguardando há mais tempo ("+wait.length+")</h2>"+tbl(["Item","Seção","Responsável","Aguardando há"],wait.sort((a,b)=>b.d-a.d).slice(0,10).map(x=>[esc(x.it.label),sec(x.it),own(x.n),x.d+" dia(s)"]));
+  h+="<h2>Itens concluídos por pessoa</h2>"+tbl(["Pessoa","Itens concluídos"],people);
+  h+="<h2>Atividade recente</h2>"+tbl(["Data","Pessoa","Alteração"],log.slice(0,12).map(r=>[fd(r.at),esc(r.by_name),evt(r)]));
+  h+="<h2 class='rt pg'>Detalhamento por seção</h2>";
+  secs.forEach(sc=>{
+    let d=0,t=0;sc.it.forEach(it=>{const s=st[it.item_id];if(s!=="n"){t++;if(s==="d")d++}});
+    h+="<h2>"+esc(clean(sc.name))+" <span class='nota'>"+d+"/"+t+"</span></h2>"+tbl(["Item","Status","Responsável","Prazo","Observação","Atualização"],sc.it.map(it=>{
+      const n=nt[it.item_id]||{},s=st[it.item_id];
+      return [esc(it.label),dots(s)+LB[s],esc(n.owner||""),n.due?dm(n.due):"",esc(n.note||""),by[it.item_id]?esc(by[it.item_id])+(ts[it.item_id]?" · "+fd(ts[it.item_id]):""):""];
+    }));
+  });
+  $("rep").innerHTML=h;$("toast").hidden=true;
+  setTimeout(()=>window.print(),200);
 }
 $("v-r").onclick=e=>{if(e.target.id==="pdf")report()};
 $("ex").onclick=()=>secs.forEach(s=>s.d.open=true);
 $("co").onclick=()=>secs.forEach(s=>s.d.open=false);
 
-async function loadMs(){const {data}=await db.from("checklist_milestones").select("*");window._ms=data||[];showMs()}
-function showMs(){
-  const el=$("ms");if(!el)return;
-  el.innerHTML=[50,75,90,100].map(t=>{const m=window._ms.find(x=>x.threshold===t);
-    return "<div class='li'><span class='mono'>"+t+"%</span><span class='tag"+(m?" ok":"")+"'>"+(m?"Enviado":"Aguardando")+"</span>"+(m?"<small>"+fd(m.created_at)+"</small>":"")+"</div>"}).join("");
-}
-
 const hl=r=>{
   if(r.kind==="note")return "<div class='li'><b>"+esc(r.by_name)+"</b> atualizou “"+esc(lab[r.item_id]||r.item_id)+"”: "+esc(r.value)+"<small>"+fd(r.at)+"</small></div>";
-  if(r.item_id.startsWith("cfg_"))return "<div class='li'><b>"+esc(r.by_name)+"</b> alterou "+KL[r.item_id]+" para “"+esc(r.value)+"”<small>"+fd(r.at)+"</small></div>";
+  if(r.item_id.startsWith("cfg_"))return "<div class='li'><b>"+esc(r.by_name)+"</b> alterou "+KL[r.item_id]+" para “"+esc(r.item_id==="cfg_meta"&&r.value?dm(r.value):r.value)+"”<small>"+fd(r.at)+"</small></div>";
   return "<div class='li'><b>"+esc(r.by_name)+"</b> definiu “"+esc(lab[r.item_id]||r.item_id)+"” como "+LB[r.status]+"<small>"+fd(r.at)+"</small></div>";
 };
 function showLog(){$("hist").innerHTML=log.length?log.map(hl).join(""):"<div class='mut'>Nenhuma alteração registrada.</div>"}
@@ -340,11 +456,11 @@ function showTeam(){
    "<div class='acts'>"+(user?"<button class='btn sec' id='sw'>Trocar usuário</button><button class='btn sec' id='lv'>Sair da equipe</button>":"<button class='btn' id='en'>Entrar</button>")+"</div>";
   if(!user){$("en").onclick=openGate;return}
   $("lv").onclick=async()=>{
-    if(!confirm("Sair da equipe? Você deixará de receber os relatórios por e-mail."))return;
+    if(!confirm("Sair da equipe? Seu nome deixará de aparecer na lista da equipe."))return;
     const {error}=await db.rpc("leave_team",{p_email:user.email});
     if(error){alert("Não foi possível sair. Tente novamente.");return}
     ls.set("user","null");user=null;$("gn").value="";$("ge").value="";auth();loadMem();
-    toast("Você saiu da equipe e não receberá mais e-mails.");
+    toast("Você saiu da equipe.");
   };
   $("sw").onclick=()=>{ls.set("user","null");user=null;$("gn").value="";$("ge").value="";auth();openGate()};
 }
@@ -352,7 +468,7 @@ async function loadMem(){const {data}=await db.rpc("team_names");mem=data||[];$(
 async function loadNt(){const {data}=await db.from("checklist_notes").select("*");(data||[]).forEach(r=>{nt[r.item_id]={owner:r.owner,due:r.due,note:r.note}});paint()}
 async function loadLog(){const {data}=await db.from("checklist_log").select("*").order("at",{ascending:false}).limit(60);log=data||[];showLog()}
 async function loadSt(){const {data}=await db.from("checklist_status").select("*");(data||[]).forEach(r=>{st[r.item_id]=r.status;by[r.item_id]=r.updated_by;ts[r.item_id]=r.updated_at});paint()}
-const keys={cfg_nome:$("cfg_nome"),cfg_ip:$("cfg_ip"),cfg_ver:$("cfg_ver")};
+const keys={cfg_nome:$("cfg_nome"),cfg_ip:$("cfg_ip"),cfg_ver:$("cfg_ver"),cfg_meta:$("cfg_meta")};
 function applyName(){const n=(keys.cfg_nome.value||"").trim();$("pn").textContent=n?"Implantação "+n:"Implantação";document.title=(n?n+" · ":"")+"Checklist de Implantação · WPS"}
 keys.cfg_nome.oninput=applyName;
 const apc=r=>{const e=keys[r.key];if(e&&document.activeElement!==e)e.value=r.value||"";if(r.key==="cfg_nome")applyName()};
