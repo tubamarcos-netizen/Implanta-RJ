@@ -222,7 +222,7 @@ $("gf").onsubmit=async e=>{
   if(name.length<2||!/^\S+@\S+\.\S+$/.test(email)){$("gerr").textContent="Informe nome e e-mail válidos.";return}
   if(!db){$("gerr").textContent="Sistema ainda não configurado.";return}
   const {error}=await db.rpc("register_member",{p_name:name,p_email:email});
-  if(error){$("gerr").textContent="Não foi possível salvar. Tente novamente.";return}
+  if(error){$("gerr").textContent=/limite/i.test(error.message||"")?"Limite de membros atingido. Fale com o administrador.":"Não foi possível salvar. Tente novamente.";return}
   user={name,email};ls.set("user",JSON.stringify(user));$("gate").hidden=true;auth();loadMem();
   if(pend){const f=pend;pend=null;f()}
 };
